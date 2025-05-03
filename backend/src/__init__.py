@@ -2,12 +2,6 @@
 Herramienta para obtener el catálogo de productos y servicios del SAT
 """
 
-from .scraper import (
-    obtain_types, 
-    obtain_segments, 
-    obtain_families, 
-    obtain_classes
-)
 from .generator import generate_pys_data
 from .exporter import export_to_xml, export_to_json
 
