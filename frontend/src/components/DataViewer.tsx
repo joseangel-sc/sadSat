@@ -81,14 +81,6 @@ const DataViewer = ({ onRefresh }: DataViewerProps) => {
       <h2>Catalog Data</h2>
       <div className="button-container" style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
         <button 
-          onClick={pullFreshData} 
-          className="pull-button"
-          disabled={pullInProgress}
-          style={{ color: 'black' }}
-        >
-          {pullInProgress ? 'Pulling Data...' : 'Pull Fresh Data'}
-        </button>
-        <button 
           onClick={fetchData} 
           className="show-button"
           disabled={loading}

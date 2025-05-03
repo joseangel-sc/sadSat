@@ -69,3 +69,11 @@ restart_back:
 		-v pyconodig-data:/app/data \
 		-d pyconodig-backend
 	@echo "Backend rebuilt and restarted at http://localhost:8000"
+
+
+deploy: 
+	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 409439538115.dkr.ecr.us-east-1.amazonaws.com
+	docker build -t tecfis backend
+	docker tag tecfis:latest 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest	
+	docker push 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest
+	
