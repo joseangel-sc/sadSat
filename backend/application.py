@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/hello_world")
+@app.get("/")
 async def hello_world():
     """
     Return the current timestamp as a hello world response.
@@ -38,30 +38,30 @@ async def root():
     """
     return {"message": "Welcome to the API. Try /hello_world endpoint."}
 
-@app.get("/pull_fresh")
-async def pull_fresh():
-    """
-    Triggers the pull_json function to generate and save fresh data to /app/output.json
-    Uses a lock to prevent concurrent pulls
-    """
-    global pull_in_progress
+# @app.get("/pull_fresh")
+# async def pull_fresh():
+#     """
+#     Triggers the pull_json function to generate and save fresh data to /app/output.json
+#     Uses a lock to prevent concurrent pulls
+#     """
+#     global pull_in_progress
     
-    # Check if pull is already in progress
-    with pull_lock:
-        if pull_in_progress:
-            return {"message": "Data pull already in progress", "timestamp": datetime.now().isoformat()}
-        else:
-            pull_in_progress = True
+#     # Check if pull is already in progress
+#     with pull_lock:
+#         if pull_in_progress:
+#             return {"message": "Data pull already in progress", "timestamp": datetime.now().isoformat()}
+#         else:
+#             pull_in_progress = True
     
-    try:
-        result = pull_json('/app/output.json')
-        return {"message": "Data successfully pulled and saved to /app/output.json", "timestamp": datetime.now().isoformat()}
-    except Exception as e:
-        return {"error": str(e), "timestamp": datetime.now().isoformat()}
-    finally:
-        # Release the lock when done
-        with pull_lock:
-            pull_in_progress = False
+#     try:
+#         result = pull_json('/app/output.json')
+#         return {"message": "Data successfully pulled and saved to /app/output.json", "timestamp": datetime.now().isoformat()}
+#     except Exception as e:
+#         return {"error": str(e), "timestamp": datetime.now().isoformat()}
+#     finally:
+#         # Release the lock when done
+#         with pull_lock:
+#             pull_in_progress = False
 
 @app.get("/show_latest")
 async def show_latest():
