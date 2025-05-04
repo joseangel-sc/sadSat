@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from datetime import datetime
 import json
 import os
@@ -14,17 +15,17 @@ app = FastAPI()
 pull_in_progress = False
 pull_lock = threading.Lock()
 
-# Add CORS middleware to allow cross-origin requests from the frontend
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origin
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 @app.get("/")
-async def hello_world():
+async def root():
     """
     Return the current timestamp as a hello world response.
     """
@@ -33,40 +34,21 @@ async def hello_world():
 
 @app.get("/health")
 async def health():
-    return 200
-
-
-@app.get("/")
-async def root():
     """
-    Root endpoint that redirects to hello_world.
+    Health check endpoint
     """
-    return {"message": "Welcome to the API. Try /hello_world endpoint."}
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"status": "healthy"}
+    )
 
-# @app.get("/pull_fresh")
-# async def pull_fresh():
-#     """
-#     Triggers the pull_json function to generate and save fresh data to /app/output.json
-#     Uses a lock to prevent concurrent pulls
-#     """
-#     global pull_in_progress
-    
-#     # Check if pull is already in progress
-#     with pull_lock:
-#         if pull_in_progress:
-#             return {"message": "Data pull already in progress", "timestamp": datetime.now().isoformat()}
-#         else:
-#             pull_in_progress = True
-    
-#     try:
-#         result = pull_json('/app/output.json')
-#         return {"message": "Data successfully pulled and saved to /app/output.json", "timestamp": datetime.now().isoformat()}
-#     except Exception as e:
-#         return {"error": str(e), "timestamp": datetime.now().isoformat()}
-#     finally:
-#         # Release the lock when done
-#         with pull_lock:
-#             pull_in_progress = False
+@app.get("/hello_world")
+async def hello_world():
+    """
+    Hello world endpoint
+    """
+    current_time = datetime.now().isoformat()
+    return {"message": "Hello World!", "timestamp": current_time}
 
 @app.get("/show_latest")
 async def show_latest():
@@ -76,7 +58,10 @@ async def show_latest():
     file_path = '/app/output.json'
     try:
         if not os.path.exists(file_path):
-            return {"error": f"File {file_path} does not exist", "timestamp": datetime.now().isoformat()}
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"error": f"File {file_path} does not exist", "timestamp": datetime.now().isoformat()}
+            )
         
         # Use async file operations
         async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
@@ -88,13 +73,17 @@ async def show_latest():
         
         return data
     except json.JSONDecodeError as e:
-        return {"error": f"Invalid JSON format: {str(e)}", "timestamp": datetime.now().isoformat()}
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": f"Invalid JSON format: {str(e)}", "timestamp": datetime.now().isoformat()}
+        )
     except Exception as e:
-        return {"error": str(e), "timestamp": datetime.now().isoformat()}
-    
-
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e), "timestamp": datetime.now().isoformat()}
+        )
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
-
+    
