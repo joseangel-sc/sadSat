@@ -24,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def root():
     """
@@ -31,6 +32,7 @@ async def root():
     """
     current_time = datetime.now().isoformat()
     return {"message": "Hello World!", "timestamp": current_time}
+
 
 @app.get("/health")
 async def health():
@@ -42,6 +44,7 @@ async def health():
         content={"status": "healthy"}
     )
 
+
 @app.get("/hello_world")
 async def hello_world():
     """
@@ -49,6 +52,7 @@ async def hello_world():
     """
     current_time = datetime.now().isoformat()
     return {"message": "Hello World!", "timestamp": current_time}
+
 
 @app.get("/show_latest")
 async def show_latest():
@@ -85,5 +89,4 @@ async def show_latest():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
-    
+    uvicorn.run(app, host="0.0.0.0", port=8080)
