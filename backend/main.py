@@ -31,6 +31,11 @@ async def hello_world():
     current_time = datetime.now().isoformat()
     return {"message": "Hello World!", "timestamp": current_time}
 
+@app.get("/health")
+async def health():
+    return 200
+
+
 @app.get("/")
 async def root():
     """

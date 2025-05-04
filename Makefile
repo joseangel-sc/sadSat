@@ -10,11 +10,11 @@ back:
 	docker stop pyconodig-backend-container 2>/dev/null || true
 	docker rm pyconodig-backend-container 2>/dev/null || true
 	docker run --name pyconodig-backend-container \
-		-p 8000:8000 \
+		-p 8080:8080 \
 		-v $(PWD)/backend:/app \
 		-v pyconodig-data:/app/data \
 		-d pyconodig-backend
-	@echo "Backend running at http://localhost:8000"
+	@echo "Backend running at http://localhost:8080"
 
 
 # Install dependencies and run the frontend dev server
@@ -64,11 +64,11 @@ restart_back:
 	docker rm pyconodig-backend-container 2>/dev/null || true
 	docker build -t pyconodig-backend ./backend
 	docker run --name pyconodig-backend-container \
-		-p 8000:8000 \
+		-p 8080:8080 \
 		-v $(PWD)/backend:/app \
 		-v pyconodig-data:/app/data \
 		-d pyconodig-backend
-	@echo "Backend rebuilt and restarted at http://localhost:8000"
+	@echo "Backend rebuilt and restarted at http://localhost:8080"
 
 
 deploy: 
@@ -76,4 +76,3 @@ deploy:
 	docker build -t tecfis backend
 	docker tag tecfis:latest 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest	
 	docker push 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest
-	
