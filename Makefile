@@ -6,7 +6,7 @@ all: help
 # Build and run the backend Docker container
 back:
 	@echo "Building and running backend container..."
-	docker build -t pyconodig-backend ./backend
+	docker build --platform linux/arm64 -t tecfis-local backend
 	docker stop pyconodig-backend-container 2>/dev/null || true
 	docker rm pyconodig-backend-container 2>/dev/null || true
 	docker run --name pyconodig-backend-container \
@@ -59,10 +59,7 @@ terminal:
 
 # Restart the backend container with a fresh build
 restart_back:
-	@echo "Rebuilding and restarting backend container..."
-	docker stop pyconodig-backend-container 2>/dev/null || true
-	docker rm pyconodig-backend-container 2>/dev/null || true
-	docker build -t pyconodig-backend ./backend
+	docker rm -f pyconodig-backend-container 2>/dev/null || true
 	docker run --name pyconodig-backend-container \
 		-p 8080:8080 \
 		-v $(PWD)/backend:/app \

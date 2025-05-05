@@ -6,14 +6,11 @@ import json
 import os
 import aiofiles
 import asyncio
-from src import pull_json
 import threading
+
 
 app = FastAPI()
 
-# Global lock flag to prevent concurrent pulls
-pull_in_progress = False
-pull_lock = threading.Lock()
 
 # Add CORS middleware
 app.add_middleware(
@@ -25,7 +22,6 @@ app.add_middleware(
 )
 
 
-@app.get("/")
 async def root():
     """
     Return the current timestamp as a hello world response.
