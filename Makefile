@@ -73,3 +73,7 @@ deploy:
 	docker build --platform linux/amd64 -t tecfis backend
 	docker tag tecfis:latest 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest	
 	docker push 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest
+
+lint:
+	docker exec pyconodig-backend-container ruff check /app --fix --unsafe-fixes
+	docker exec pyconodig-backend-container black /app

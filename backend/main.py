@@ -7,7 +7,16 @@ import os
 import aiofiles
 import asyncio
 import threading
+import logging
 
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler("app.log")],
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -27,6 +36,7 @@ async def root():
     Return the current timestamp as a hello world response.
     """
     current_time = datetime.now().isoformat()
+    logger.info("Root endpoint accessed")
     return {"message": "Hello World!", "timestamp": current_time}
 
 
@@ -35,10 +45,8 @@ async def health():
     """
     Health check endpoint
     """
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"status": "healthy"}
-    )
+    logger.info("Health check endpoint accessed")
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "healthy"})
 
 
 @app.get("/hello_world")
@@ -47,6 +55,7 @@ async def hello_world():
     Hello world endpoint
     """
     current_time = datetime.now().isoformat()
+    logger.info("Hello world endpoint accessed")
     return {"message": "Hello World!", "timestamp": current_time}
 
 
@@ -55,34 +64,48 @@ async def show_latest():
     """
     Returns the content of /app/output.json using async I/O
     """
-    file_path = '/app/output.json'
+    logger.info("Show latest endpoint accessed")
+    file_path = "/app/output.json"
     try:
         if not os.path.exists(file_path):
+            logger.error(f"File {file_path} does not exist")
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={"error": f"File {file_path} does not exist", "timestamp": datetime.now().isoformat()}
+                content={
+                    "error": f"File {file_path} does not exist",
+                    "timestamp": datetime.now().isoformat(),
+                },
             )
-        
+
         # Use async file operations
-        async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+        async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
             content = await f.read()
-        
+
         # Parse JSON in a separate thread to avoid blocking the event loop
         loop = asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: json.loads(content))
-        
+
+        logger.info("Successfully retrieved and parsed latest data")
         return data
     except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON format: {str(e)}")
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"error": f"Invalid JSON format: {str(e)}", "timestamp": datetime.now().isoformat()}
+            content={
+                "error": f"Invalid JSON format: {str(e)}",
+                "timestamp": datetime.now().isoformat(),
+            },
         )
     except Exception as e:
+        logger.error(f"Error serving latest data: {str(e)}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": str(e), "timestamp": datetime.now().isoformat()}
+            content={"error": str(e), "timestamp": datetime.now().isoformat()},
         )
+
 
 if __name__ == "__main__":
     import uvicorn
+
+    logger.info("Starting application server")
     uvicorn.run(app, host="0.0.0.0", port=8080)

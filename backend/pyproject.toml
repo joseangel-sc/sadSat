@@ -1,0 +1,9 @@
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["F401"]
+fixable = ["ALL"]
+extend-safe-fixes = ["E501"]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
