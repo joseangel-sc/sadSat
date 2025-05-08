@@ -4,9 +4,9 @@
 all: help
 
 # Build and run the backend Docker container
-back:
+build:
 	@echo "Building and running backend container..."
-	docker build --platform linux/arm64 -t tecfis-local backend
+	docker build --progress=plain --platform linux/arm64 -t tecfis-local backend
 	docker stop pyconodig-backend-container 2>/dev/null || true
 	docker rm pyconodig-backend-container 2>/dev/null || true
 	docker run --name pyconodig-backend-container \

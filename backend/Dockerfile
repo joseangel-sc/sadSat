@@ -10,6 +10,6 @@ COPY . /app/
 EXPOSE 8080
 
 ENTRYPOINT ["uvicorn"]
-CMD ["main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
 
 

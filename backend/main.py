@@ -9,8 +9,10 @@ import asyncio
 import threading
 import logging
 
+from src.generator import pull_json
+from src.generator import is_pull_locked
 
-# Configure logging
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -20,8 +22,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,39 +31,44 @@ app.add_middleware(
 )
 
 
+@app.get("/")
 async def root():
-    """
-    Return the current timestamp as a hello world response.
-    """
     current_time = datetime.now().isoformat()
     logger.info("Root endpoint accessed")
     return {"message": "Hello World!", "timestamp": current_time}
 
-
 @app.get("/health")
 async def health():
-    """
-    Health check endpoint
-    """
     logger.info("Health check endpoint accessed")
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "healthy"})
 
-
-@app.get("/hello_world")
-async def hello_world():
-    """
-    Hello world endpoint
-    """
+@app.get("/pull_json")
+async def pull_json_endpoint():
     current_time = datetime.now().isoformat()
-    logger.info("Hello world endpoint accessed")
-    return {"message": "Hello World!", "timestamp": current_time}
+    logger.info("Pull JSON endpoint accessed")
+    is_locked = is_pull_locked()
+    if is_locked['locked']:
+        return {"Message": "Can't trigger a new pull rightnow", "reason": is_locked['reason']}
+    pull_json_thread = threading.Thread(target=pull_json)
+    pull_json_thread.start()
+    return {"message": "JSON pulled triggered", "timestamp": current_time}
 
+
+
+@app.get("/pull_json_forced")
+async def pull_json_endpoint():
+    current_time = datetime.now().isoformat()
+    logger.info("Pull JSON endpoint by forced, accessed")
+    pull_json_thread = threading.Thread(target=pull_json)
+    pull_json_thread.start()
+    return {"message": "JSON pulled triggered, forced the execution", "timestamp": current_time}
+
+@app.get("/favicon.ico")
+async def favicon():
+    return JSONResponse(status_code=204)
 
 @app.get("/show_latest")
 async def show_latest():
-    """
-    Returns the content of /app/output.json using async I/O
-    """
     logger.info("Show latest endpoint accessed")
     file_path = "/app/output.json"
     try:
@@ -76,15 +81,10 @@ async def show_latest():
                     "timestamp": datetime.now().isoformat(),
                 },
             )
-
-        # Use async file operations
         async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
             content = await f.read()
-
-        # Parse JSON in a separate thread to avoid blocking the event loop
         loop = asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: json.loads(content))
-
         logger.info("Successfully retrieved and parsed latest data")
         return data
     except json.JSONDecodeError as e:
@@ -103,9 +103,7 @@ async def show_latest():
             content={"error": str(e), "timestamp": datetime.now().isoformat()},
         )
 
-
 if __name__ == "__main__":
     import uvicorn
-
     logger.info("Starting application server")
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8080, reload=True, log_level="debug")
