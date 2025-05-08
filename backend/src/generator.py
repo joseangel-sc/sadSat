@@ -34,7 +34,7 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
 
     types = obtain_types()
     for type_id, type_name in types.items():
-        if type_name == 'Seleccione...':
+        if type_id == '0':
             continue
         type_data = {"key": type_id, "name": type_name, "segments": []}
 
@@ -43,7 +43,7 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
 
         segments = obtain_segments(type_id)
         for segment_id, segment_name in segments.items():
-            if segment_name == 'Seleccione...':
+            if segment_id == '0':
                 continue
             segment_data = {"key": segment_id, "name": segment_name, "families": []}
 
@@ -52,7 +52,7 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
 
             families = obtain_families(type_id, segment_id)
             for family_id, family_name in families.items():
-                if family_name == 'Seleccione...':
+                if family_id == '0':
                     continue
                 family_data = {"key": family_id, "name": family_name, "classes": []}
 
@@ -61,7 +61,7 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
 
                 classes = obtain_classes(type_id, segment_id, family_id)
                 for class_id, class_name in classes.items():
-                    if class_name == 'Seleccione...':
+                    if class_id == '0':
                         continue
                     class_data = {"key": class_id, "name": class_name}
                     family_data["classes"].append(class_data)
@@ -114,7 +114,6 @@ def pull_json(forced=False):
     try:
         data = generate_pys_data()
         result = export_to_json(data, output_file)
-        x = 1/0 
         return result
     finally:
         if os.path.exists('output.json.lock'):
