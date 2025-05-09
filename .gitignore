@@ -39,7 +39,7 @@ package-lock.json
 yarn.lock
 .pnp.*
 .npm
-
+*.csv
 # TypeScript
 *.tsbuildinfo
 
