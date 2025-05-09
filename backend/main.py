@@ -83,6 +83,29 @@ async def show_latest():
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.get("/search")
+async def search_catalog(q: str):
+    with open("output.json", encoding="utf-8") as f:
+        data = json.load(f)
+
+    matches = []
+    for tipo in data:
+        for div in tipo.get("segments", []):
+            for grupo in div.get("families", []):
+                for clase in grupo.get("classes", []):
+                    if q.lower() in clase["name"].lower():
+                        matches.append({
+                            "tipo_num": tipo["key"],
+                            "tipo": tipo["name"],
+                            "div_num": div["key"],
+                            "division": div["name"],
+                            "grupo_num": grupo["key"],
+                            "grupo": grupo["name"],
+                            "clase_num": clase["key"],
+                            "clase": clase["name"]
+                        })
+    return matches
+
 
 if __name__ == "__main__":
     import uvicorn
