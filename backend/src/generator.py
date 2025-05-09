@@ -12,6 +12,7 @@ from src.scraper import obtain_segments
 from src.scraper import obtain_families
 from src.scraper import obtain_classes
 from src.exporter import export_to_json
+from src.taxonomy import flatten_data
 
 
 logger = logging.getLogger(__name__)
@@ -114,8 +115,10 @@ def pull_json(forced=False):
     try:
         data = generate_pys_data()
         result = export_to_json(data, output_file)
+        flatten_data(output_file)
         return result
     finally:
         if os.path.exists('output.json.lock'):
             os.remove('output.json.lock')
         logger.info("pull_json operation completed")
+

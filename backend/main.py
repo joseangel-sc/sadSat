@@ -69,39 +69,20 @@ async def favicon():
 
 @app.get("/show_latest")
 async def show_latest():
-    logger.info("Show latest endpoint accessed")
     file_path = "/app/output.json"
     try:
         if not os.path.exists(file_path):
-            logger.error(f"File {file_path} does not exist")
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={
-                    "error": f"File {file_path} does not exist",
-                    "timestamp": datetime.now().isoformat(),
-                },
-            )
+            return JSONResponse(status_code=404, content={"error": "File not found"})
         async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
             content = await f.read()
-        loop = asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: json.loads(content))
-        logger.info("Successfully retrieved and parsed latest data")
-        return data
+        data = json.loads(content)
+        created = datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat()
+        return {"date_pulled": created, "data": data}
     except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON format: {str(e)}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "error": f"Invalid JSON format: {str(e)}",
-                "timestamp": datetime.now().isoformat(),
-            },
-        )
+        return JSONResponse(status_code=400, content={"error": f"Invalid JSON: {str(e)}"})
     except Exception as e:
-        logger.error(f"Error serving latest data: {str(e)}")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": str(e), "timestamp": datetime.now().isoformat()},
-        )
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 if __name__ == "__main__":
     import uvicorn
