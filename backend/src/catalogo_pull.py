@@ -1,38 +1,39 @@
-from datetime import datetime, timedelta
+import os
+import logging
 import pandas as pd
 import requests
-from io import BytesIO
-import os
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
-def fetch_latest_cfdi_catalog_sheet(local_dir="."):
-    today = datetime.today()
-    base_url = "http://omawww.sat.gob.mx/tramitesyservicios/Paginas/documentos/catCFDI_V_4_{}.xls"
-    for delta in range(90):
-        date_str = (today - timedelta(days=delta)).strftime("%Y%m%d")
-        filename = f"catCFDI_V_4_{date_str}.xls"
-        local_path = os.path.join(local_dir, filename)
-        parquet_path = os.path.join(local_dir, "catalogo.parquet")
+def fetch_cfdi_catalog_by_date(date_str):
+    xls_filename = f"catCFDI_V_4_{date_str}.xls"
+    xls_path = f"/app/{xls_filename}"
+    parquet_filename = f"catalogo_{date_str}.parquet"
+    parquet_path = f"/app/{parquet_filename}"
 
-        if os.path.isfile(parquet_path):
-            return pd.read_parquet(parquet_path)
+    if os.path.isfile(parquet_path):
+        mtime = datetime.fromtimestamp(os.path.getmtime(parquet_path))
+        logger.info(f"File already exists: {parquet_filename}")
+        logger.info(f"Represents data from: {date_str}")
+        logger.info(f"Pulled on: {mtime.isoformat()}")
+        return
 
-        if os.path.isfile(local_path):
-            excel_data = pd.ExcelFile(local_path)
-        else:
-            url = base_url.format(date_str)
+    if not os.path.isfile(xls_path):
+        url = f"http://omawww.sat.gob.mx/tramitesyservicios/Paginas/documentos/{xls_filename}"
+        try:
             response = requests.get(url)
-            if not response.ok:
-                continue
-            with open(local_path, "wb") as f:
+            response.raise_for_status()
+            with open(xls_path, "wb") as f:
                 f.write(response.content)
-            excel_data = pd.ExcelFile(BytesIO(response.content))
+        except Exception as e:
+            logger.error(f"Failed to download Excel file: {e}")
+            return
 
-        if "c_ClaveProdServ" in excel_data.sheet_names:
-            df = pd.read_excel(excel_data, sheet_name="c_ClaveProdServ", skiprows=4)
-            df.to_parquet(parquet_path, index=False)
-            return df
-
-    raise FileNotFoundError(
-        "No valid Excel file with c_ClaveProdServ sheet found in last 90 days"
-    )
+    excel_data = pd.ExcelFile(xls_path)
+    df = pd.read_excel(excel_data, sheet_name="c_ClaveProdServ", skiprows=4)
+    df.to_parquet(parquet_path, index=False)
+    logger.info(f"Success: saved as {parquet_filename}")
+    logger.info(f"Represents data from: {date_str}")
+    logger.info(f"Pulled on: {datetime.now().isoformat()}")

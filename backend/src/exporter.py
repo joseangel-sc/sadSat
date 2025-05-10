@@ -8,7 +8,6 @@ import xml.dom.minidom as minidom
 import xml.etree.ElementTree as ET
 from typing import Dict, List, Any, Optional
 
-# Configure logger
 logger = logging.getLogger(__name__)
 
 
