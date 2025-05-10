@@ -1,6 +1,7 @@
 """
 Funciones para generar la estructura completa de datos
 """
+
 import os
 import sys
 import time
@@ -12,6 +13,7 @@ from src.scraper import obtain_segments
 from src.scraper import obtain_families
 from src.scraper import obtain_classes
 from src.exporter import export_to_json
+from src.exporter import export_to_xml
 from src.taxonomy import flatten_data
 
 
@@ -35,7 +37,7 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
 
     types = obtain_types()
     for type_id, type_name in types.items():
-        if type_id == '0':
+        if type_id == "0":
             continue
         type_data = {"key": type_id, "name": type_name, "segments": []}
 
@@ -44,7 +46,7 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
 
         segments = obtain_segments(type_id)
         for segment_id, segment_name in segments.items():
-            if segment_id == '0':
+            if segment_id == "0":
                 continue
             segment_data = {"key": segment_id, "name": segment_name, "families": []}
 
@@ -53,7 +55,7 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
 
             families = obtain_families(type_id, segment_id)
             for family_id, family_name in families.items():
-                if family_id == '0':
+                if family_id == "0":
                     continue
                 family_data = {"key": family_id, "name": family_name, "classes": []}
 
@@ -62,7 +64,7 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
 
                 classes = obtain_classes(type_id, segment_id, family_id)
                 for class_id, class_name in classes.items():
-                    if class_id == '0':
+                    if class_id == "0":
                         continue
                     class_data = {"key": class_id, "name": class_name}
                     family_data["classes"].append(class_data)
@@ -86,8 +88,8 @@ def pull_xml(output_file=None):
 
 
 def is_pull_locked():
-    lock_file = 'output.json.lock'
-    output_file = 'output.json'
+    lock_file = "output.json.lock"
+    output_file = "output.json"
 
     if os.path.exists(lock_file):
         return {"locked": True, "reason": "lock file exists"}
@@ -106,19 +108,18 @@ def is_pull_locked():
 
 def pull_json(forced=False):
     locked_status = is_pull_locked()
-    if locked_status['locked'] and not forced:
+    if locked_status["locked"] and not forced:
         logger.info("Lock is active, not pulling anything")
         return
-    output_file = 'output.json'
+    output_file = "output.json"
     logger.info("Starting pull_json operation")
-    open('output.json.lock', 'w').close()
+    open("output.json.lock", "w").close()
     try:
         data = generate_pys_data()
         result = export_to_json(data, output_file)
         flatten_data(output_file)
         return result
     finally:
-        if os.path.exists('output.json.lock'):
-            os.remove('output.json.lock')
+        if os.path.exists("output.json.lock"):
+            os.remove("output.json.lock")
         logger.info("pull_json operation completed")
-
