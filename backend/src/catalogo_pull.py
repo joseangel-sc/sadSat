@@ -40,5 +40,3 @@ def fetch_cfdi_catalog_by_date(date_str):
     logger.info(f"Represents data from: {date_str}")
     logger.info(f"Pulled on: {datetime.now().isoformat()}")
     return {"success": True, "reason": "New file pulled"}
-
-

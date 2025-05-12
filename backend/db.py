@@ -5,7 +5,7 @@ Base = declarative_base()
 
 
 class ClaveProdServ(Base):
-    __tablename__ = 'clave_prod_serv'
+    __tablename__ = "clave_prod_serv"
     c_ClaveProdServ = Column(String, primary_key=True)
     Descripcion = Column(String)
     Incluir_IVA_trasladado = Column(String)
@@ -17,8 +17,8 @@ class ClaveProdServ(Base):
     Palabras_similares = Column(String)
 
 
-class Clasificacion(Base):
-    __tablename__ = 'clasificacion'
+class Classification(Base):
+    __tablename__ = "classification"
     tipo_num = Column(Integer)
     Tipo = Column(String)
     Div_num = Column(Integer)

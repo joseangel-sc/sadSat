@@ -13,7 +13,7 @@ import logging
 from src.generator import pull_json
 from src.generator import is_pull_locked
 from src.catalogo_pull import fetch_cfdi_catalog_by_date
-from db import Base, ClaveProdServ, Clasificacion
+from db import Base, ClaveProdServ, Classification
 
 logging.basicConfig(
     level=logging.INFO,
@@ -155,7 +155,7 @@ def get_clave_prod_serv(db: Session = Depends(get_db)):
 
 @app.get("/api/clasificacion")
 def get_clasificacion(db: Session = Depends(get_db)):
-    results = db.query(Clasificacion).limit(10).all()
+    results = db.query(Classification).limit(10).all()
     return [r.__dict__ for r in results]
 
 
