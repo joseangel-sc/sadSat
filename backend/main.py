@@ -12,8 +12,13 @@ import logging
 
 from src.generator import pull_json
 from src.generator import is_pull_locked
-from src.catalogo_pull import fetch_cfdi_catalog_by_date
+from src.catalogo_pull import download_cfdi_catalog
 from db import Base, ClaveProdServ, Classification
+
+from session import get_db, engine, SessionLocal
+from src.taxonomy import flatten_data
+from src.catalogo_pull import load_latest_catalog_to_db
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,19 +27,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 app = FastAPI()
 
@@ -138,7 +131,7 @@ async def search_catalog(q: str):
 
 @app.post("/pull_catalogo/{date_str}")
 async def pull_catalogo(date_str: str):
-    catalog = fetch_cfdi_catalog_by_date(date_str)
+    catalog = download_cfdi_catalog(date_str)
     if catalog["success"]:
         return JSONResponse(status_code=200, content={"message": catalog["reason"]})
     if not catalog["success"] and catalog["reason"] == "Not a valid date":
@@ -147,16 +140,18 @@ async def pull_catalogo(date_str: str):
     return JSONResponse(status_code=500, content={"error": "server error"})
 
 
-@app.get("/api/clave_prod_serv")
-def get_clave_prod_serv(db: Session = Depends(get_db)):
-    results = db.query(ClaveProdServ).limit(10).all()
-    return [r.__dict__ for r in results]
+@app.get("/api/load_db")
+async def load_db(db: Session = Depends(get_db)):
+    db.query(Classification).delete()
+    flatten_data()
+    load_latest_catalog_to_db()
+    classification_count = db.query(Classification).count()
+    clave_prod_serv_count = db.query(ClaveProdServ).count()
+    return {"classification_count": classification_count, "clave_prod_serv_count": clave_prod_serv_count}
 
 
-@app.get("/api/clasificacion")
-def get_clasificacion(db: Session = Depends(get_db)):
-    results = db.query(Classification).limit(10).all()
-    return [r.__dict__ for r in results]
+# @app.get("api/search")
+# async def search_both(db: Session = Depends(get_db())):
 
 
 if __name__ == "__main__":

@@ -7,3 +7,7 @@ extend-safe-fixes = ["E501"]
 [tool.ruff]
 line-length = 120
 indent-width = 4
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"

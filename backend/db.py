@@ -27,3 +27,6 @@ class Classification(Base):
     Grupo = Column(String)
     Clase_num = Column(Integer, primary_key=True)
     Clase = Column(String)
+
+
+

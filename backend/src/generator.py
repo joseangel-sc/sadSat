@@ -8,12 +8,12 @@ import time
 import logging
 from typing import Dict, List, Any
 
-from src.scraper import obtain_types
-from src.scraper import obtain_segments
-from src.scraper import obtain_families
-from src.scraper import obtain_classes
-from src.exporter import export_to_json
-from src.exporter import export_to_xml
+from src._scraper import obtain_types
+from src._scraper import obtain_segments
+from src._scraper import obtain_families
+from src._scraper import obtain_classes
+from src._exporter import export_to_json
+from src._exporter import export_to_xml
 from src.taxonomy import flatten_data
 
 
@@ -117,7 +117,6 @@ def pull_json(forced=False):
     try:
         data = generate_pys_data()
         result = export_to_json(data, output_file)
-        flatten_data(output_file)
         return result
     finally:
         if os.path.exists("output.json.lock"):
