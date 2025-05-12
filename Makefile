@@ -1,4 +1,4 @@
-.PHONY: back front up clean help restart_back logs terminal
+.PHONY: back front up clean help restart_back logs terminal debug
 
 # Default target
 all: help
@@ -45,6 +45,7 @@ help:
 	@echo "  make front  - Install dependencies and run the frontend dev server"
 	@echo "  make up     - Run both backend and frontend services"
 	@echo "  make clean  - Remove Docker containers and images"
+	@echo "  make debug  - Run backend in interactive mode for ipdb debugging"
 	@echo "  make help   - Display this help message"
 
 
@@ -67,6 +68,16 @@ restart_back:
 		-d pyconodig-backend
 	@echo "Backend rebuilt and restarted at http://localhost:8080"
 
+# Run backend container in interactive mode for debugging with ipdb
+debug:
+	@echo "Running backend in debug mode with ipdb support..."
+	docker stop pyconodig-backend-container 2>/dev/null || true
+	docker rm pyconodig-backend-container 2>/dev/null || true
+	docker run --name pyconodig-backend-container \
+		-p 8080:8080 \
+		-v $(PWD)/backend:/app \
+		-v pyconodig-data:/app/data \
+		-it pyconodig-backend
 
 deploy:
 	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 409439538115.dkr.ecr.us-east-1.amazonaws.com
