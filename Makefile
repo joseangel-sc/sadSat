@@ -1,4 +1,4 @@
-.PHONY: back front up clean help restart_back logs terminal debug
+.PHONY: back front up clean help restart_back logs terminal debug build_front deploy_front
 
 # Default target
 all: help
@@ -23,6 +23,35 @@ front:
 	cd frontend && npm install
 	cd frontend && npm run dev
 
+# Build the frontend application for production
+build_front:
+	@echo "Building frontend for production..."
+	cd frontend && npm install
+	cd frontend && rm -rf dist tsconfig.tsbuildinfo
+	cd frontend && npm run build
+	@echo "Frontend build completed. Production files are in frontend/dist directory."
+
+# Build and deploy the frontend to AWS S3
+deploy_front:
+	@echo "Building and deploying frontend to S3..."
+	# First build the frontend
+	$(MAKE) build_front
+	
+	# Sync the built frontend to the S3 bucket
+	@echo "Uploading to S3 bucket app.tecfis.com..."
+	aws s3 sync frontend/dist/ s3://app.tecfis.com/ --delete
+	
+	# Invalidate CloudFront cache if needed
+	@echo "Invalidating CloudFront cache..."
+	DISTRIBUTION_ID=$$(aws cloudfront list-distributions --query "DistributionList.Items[?Aliases.Items[?contains(@, 'app.tecfis.com')]].Id" --output text) && \
+	if [ ! -z "$$DISTRIBUTION_ID" ]; then \
+		aws cloudfront create-invalidation --distribution-id $$DISTRIBUTION_ID --paths "/*"; \
+	else \
+		echo "No CloudFront distribution found for app.tecfis.com"; \
+	fi
+	
+	@echo "Frontend deployment completed. Visit https://app.tecfis.com to see the changes."
+
 # Run both services in parallel
 up:
 	@echo "Starting both backend and frontend services..."
@@ -41,12 +70,14 @@ clean:
 # Display help information
 help:
 	@echo "Available commands:"
-	@echo "  make back   - Build and run the backend Docker container"
-	@echo "  make front  - Install dependencies and run the frontend dev server"
-	@echo "  make up     - Run both backend and frontend services"
-	@echo "  make clean  - Remove Docker containers and images"
-	@echo "  make debug  - Run backend in interactive mode for ipdb debugging"
-	@echo "  make help   - Display this help message"
+	@echo "  make back         - Build and run the backend Docker container"
+	@echo "  make front        - Install dependencies and run the frontend dev server"
+	@echo "  make build_front  - Build the frontend for production"
+	@echo "  make deploy_front - Build and deploy the frontend to AWS S3 (app.tecfis.com)"
+	@echo "  make up           - Run both backend and frontend services"
+	@echo "  make clean        - Remove Docker containers and images"
+	@echo "  make debug        - Run backend in interactive mode for ipdb debugging"
+	@echo "  make help         - Display this help message"
 
 
 logs:

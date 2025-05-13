@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 interface DataViewerProps {
-  onRefresh?: () => void;
+  // Removed onRefresh parameter as it's not used
 }
 
-const DataViewer = ({ onRefresh }: DataViewerProps) => {
+const DataViewer = ({}: DataViewerProps) => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [pullInProgress, setPullInProgress] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
@@ -22,24 +21,6 @@ const DataViewer = ({ onRefresh }: DataViewerProps) => {
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const pullFreshData = async () => {
-    try {
-      setPullInProgress(true);
-      const response = await axios.get('http://localhost:8000/pull_fresh');
-      if (response.data.message.includes("already in progress")) {
-        setError("Data pull already in progress. Please wait.");
-      } else {
-        setError(null);
-        if (onRefresh) onRefresh();
-      }
-    } catch (err) {
-      setError('Failed to refresh data from the server.');
-      console.error('Error refreshing data:', err);
-    } finally {
-      setPullInProgress(false);
     }
   };
 

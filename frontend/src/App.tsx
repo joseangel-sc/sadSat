@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './App.css'
 
+// Add declaration for the process.env
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      NODE_ENV: 'development' | 'production' | 'test';
+    }
+  }
+}
+
 interface Producto {
   c_ClaveProdServ: string;
   Descripcion: string;
@@ -23,6 +32,12 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  
+  // Determine the API base URL based on the current hostname
+  const isProduction = window.location.hostname !== 'localhost';
+  const apiBaseUrl = isProduction 
+    ? 'https://app.fistec.com' 
+    : 'http://localhost:8080';
 
   useEffect(() => {
     // Check if screen is mobile
@@ -46,7 +61,7 @@ function App() {
     try {
       setCargando(true);
       setError(null);
-      const response = await axios.get(`http://localhost:8080/search_clave_prod_and_taxonomy?q=${encodeURIComponent(busqueda)}`);
+      const response = await axios.get(`${apiBaseUrl}/search_clave_prod_and_taxonomy?q=${encodeURIComponent(busqueda)}`);
       setResultados(response.data);
       setProductoSeleccionado(null); // Reset selected product when searching
     } catch (err) {
