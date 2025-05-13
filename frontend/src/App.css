@@ -1,150 +1,376 @@
+/* Base styles */
+:root {
+  --primary-green: #10b981;
+  --primary-blue: #2563eb;
+  --secondary-green: #059669;
+  --secondary-blue: #1d4ed8;
+  --light-green: #d1fae5;
+  --light-blue: #dbeafe;
+  --dark-text: #1f2937;
+  --medium-text: #4b5563;
+  --light-text: #9ca3af;
+  --background: #f9fafb;
+  --white: #ffffff;
+  --error-red: #ef4444;
+  --gradient-bg: linear-gradient(135deg, #10b981 0%, #2563eb 100%);
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  color: var(--dark-text);
+}
+
 #root {
-  max-width: 1280px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-/* DataViewer Component Styles */
-.data-viewer {
+.app-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+  min-height: 100vh;
 }
 
-.refresh-button {
-  background-color: #4f46e5;
+/* Header Section */
+.app-header {
+  background: var(--gradient-bg);
+  color: var(--white);
+  padding: 2rem 1rem;
+  text-align: center;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.subtitulo {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-top: 0.5rem;
+}
+
+/* Search Section */
+.search-container {
+  margin: 2rem auto;
+  width: 90%;
+  max-width: 800px;
+}
+
+.search-input-container {
+  display: flex;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.search-input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  border: none;
+  background: var(--white);
+  color: var(--dark-text);
+}
+
+.search-input:focus {
+  outline: none;
+}
+
+.search-button {
+  background-color: var(--primary-green);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
+  padding: 0 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease;
 }
 
-.refresh-button:hover {
-  background-color: #4338ca;
+.search-button:hover:not(:disabled) {
+  background-color: var(--secondary-green);
 }
 
-.data-container {
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  padding: 1rem;
-  margin-top: 1rem;
-  max-height: 500px;
-  overflow-y: auto;
-  color: #000000;
+.search-button:disabled {
+  background-color: var(--light-text);
+  cursor: not-allowed;
 }
 
-.json-display pre {
-  margin: 0;
-  white-space: pre-wrap;
-  font-family: monospace;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: #000000;
-}
-
-/* Image Display Styles */
-.image-display {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: center;
-  color: #000000;
-}
-
-.image-item {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.data-image {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.25rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.error {
+.error-message {
+  color: var(--error-red);
   background-color: #fee2e2;
-  color: #b91c1c;
-  padding: 1rem;
-  border-radius: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
   margin-top: 1rem;
+  text-align: center;
+  font-weight: 500;
 }
 
-.loading {
+/* Content Section */
+.content-container {
+  display: flex;
+  gap: 2rem;
+  padding: 0 2rem 2rem;
+  flex: 1;
+}
+
+.resultados-container {
+  flex: 1;
+  background-color: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  max-height: 700px;
+  overflow-y: auto;
+  min-width: 300px;
+}
+
+.resultados-container h2 {
+  color: var(--primary-blue);
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  border-bottom: 2px solid var(--light-blue);
+  padding-bottom: 0.5rem;
+}
+
+.resultados-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.resultado-item {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  background-color: #f8fafc;
+  border-left: 4px solid transparent;
+}
+
+.resultado-item:hover {
+  background-color: var(--light-green);
+  transform: translateX(4px);
+  border-left-color: var(--primary-green);
+}
+
+.resultado-item.selected {
+  background-color: var(--light-blue);
+  border-left-color: var(--primary-blue);
+}
+
+.producto-clave {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: var(--secondary-blue);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.producto-descripcion {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.loading-spinner {
   display: flex;
   justify-content: center;
-  padding: 2rem;
-  color: #4b5563;
+  align-items: center;
+  height: 200px;
+  color: var(--medium-text);
   font-style: italic;
 }
 
-/* Tab Navigation */
-.tabs {
+.no-resultados {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--medium-text);
+  font-size: 1.1rem;
+}
+
+.instrucciones-busqueda {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--medium-text);
+  font-size: 1.1rem;
+}
+
+.ejemplo {
+  font-style: italic;
+  color: var(--secondary-blue);
+  margin-top: 0.5rem;
+}
+
+/* Detalle del Producto */
+.detalle-container {
+  flex: 1.5;
+  background-color: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 700px;
+}
+
+.detalle-container h2 {
+  color: var(--primary-green);
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  border-bottom: 2px solid var(--light-green);
+  padding-bottom: 0.5rem;
+}
+
+.producto-header {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
-.tab {
-  background-color: #f3f4f6;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: all 0.2s;
+.producto-titulo {
+  flex: 1;
+  text-align: left;
 }
 
-.tab:hover {
-  background-color: #e5e7eb;
+.producto-titulo h3 {
+  font-size: 1.6rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--dark-text);
 }
 
-.tab.active {
-  background-color: #4f46e5;
-  color: white;
+.producto-clave-detalle {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  color: var(--medium-text);
+}
+
+/* Taxonomy visualization */
+.taxonomy-container {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.taxonomy-title {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--primary-blue);
+  margin-bottom: 1.5rem;
+}
+
+.taxonomy-tree {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.taxonomy-level {
+  width: 100%;
+  background: var(--white);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.level-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--medium-text);
+  margin-bottom: 0.25rem;
+}
+
+.level-value {
+  font-size: 1.1rem;
+  color: var(--dark-text);
+}
+
+.taxonomy-arrow {
+  font-size: 1.5rem;
+  color: var(--primary-green);
+  margin: 0.5rem 0;
+}
+
+.final-level {
+  background: linear-gradient(to right, var(--light-green), var(--light-blue));
+  border: 1px solid var(--primary-green);
+}
+
+/* Palabras similares */
+.palabras-similares {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.palabras-similares h4 {
+  color: var(--primary-blue);
+  margin-top: 0;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.palabras-similares p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--medium-text);
+}
+
+/* Footer */
+.app-footer {
+  margin-top: 2rem;
+  background: var(--gradient-bg);
+  color: var(--white);
+  padding: 1.5rem;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.app-footer p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 960px) {
+  .content-container {
+    flex-direction: column;
+  }
+
+  .detalle-container, .resultados-container {
+    max-height: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-header h1 {
+    font-size: 2rem;
+  }
+
+  .search-input-container {
+    flex-direction: column;
+  }
+
+  .search-button {
+    padding: 0.75rem;
+  }
 }
