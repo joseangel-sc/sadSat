@@ -37,6 +37,17 @@ def transform_to_parquet(date_str):
 
     excel_data = pd.ExcelFile(xls_path)
     df = pd.read_excel(excel_data, sheet_name="c_ClaveProdServ", skiprows=4)
+    df.columns = [
+        'c_ClaveProdServ',
+        'Descripcion',
+        'Incluir_IVA_trasladado',
+        'Incluir_IEPS_trasladado',
+        'Complemento_que_debe_incluir',
+        'FechaInicioVigencia',
+        'FechaFinVigencia',
+        'Estimulo_Franja_Fronteriza',
+        'Palabras_similares',
+    ]
 
     df['FechaInicioVigencia'] = pd.to_datetime(df['FechaInicioVigencia'], errors='coerce')
     df['FechaFinVigencia'] = pd.to_datetime(df['FechaFinVigencia'], errors='coerce')

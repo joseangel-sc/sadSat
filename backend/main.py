@@ -1,8 +1,10 @@
-from fastapi import FastAPI, status, Depends
+from fastapi import FastAPI, status, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import or_
+from sqlalchemy import func
+
+from sqlalchemy.orm import Session
 from datetime import datetime
 import json
 import os
@@ -104,7 +106,7 @@ async def show_latest():
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
-@app.get("/search")
+@app.get("/search_taxonomy")
 async def search_catalog(q: str):
     with open("output.json", encoding="utf-8") as f:
         data = json.load(f)
@@ -140,7 +142,7 @@ async def pull_catalogo(date_str: str):
     return JSONResponse(status_code=500, content={"error": "server error"})
 
 
-@app.get("/api/load_db")
+@app.get("/load_db")
 async def load_db(db: Session = Depends(get_db)):
     db.query(Classification).delete()
     flatten_data()
@@ -150,8 +152,69 @@ async def load_db(db: Session = Depends(get_db)):
     return {"classification_count": classification_count, "clave_prod_serv_count": clave_prod_serv_count}
 
 
-# @app.get("api/search")
-# async def search_both(db: Session = Depends(get_db())):
+@app.get("/search")
+async def search_products(q: str, db: Session = Depends(get_db)):
+    search_term = f"%{q.lower()}%"
+    results = db.query(ClaveProdServ).filter(
+        or_(
+            func.lower(ClaveProdServ.Descripcion).like(search_term),
+            func.lower(ClaveProdServ.Palabras_similares).like(search_term)
+        )
+    ).all()
+    # import ipdb; ipdb.set_trace()
+    return [
+        {
+            "c_ClaveProdServ": item.c_ClaveProdServ,
+            "Descripcion": item.Descripcion,
+            "Palabras_similares": item.Palabras_similares
+        } for item in results
+    ]
+
+
+@app.get("/hierarchy/{code}")
+async def get_product_hierarchy(code: str, db: Session = Depends(get_db)):
+    """
+    Get the hierarchical classification for a product code.
+    Returns all classifications where Clase_num starts with the given code prefix.
+    """
+    logger.info(f"Getting hierarchy for code: {code}")
+    
+    # Get the product details
+    product = db.query(ClaveProdServ).filter(ClaveProdServ.c_ClaveProdServ == code).first()
+    
+    if not product:
+        return JSONResponse(status_code=404, content={"error": "Product code not found"})
+    
+    # Get the classification hierarchy
+    # For codes like 10101506, we want to find all classifications where Clase_num starts with that prefix
+    # We'll use the first digits of the code to match against Clase_num
+    code_prefix = code[:6]  # First 6 digits for matching the classification
+    
+    classifications = db.query(Classification).filter(
+        str(Classification.Clase_num).startswith(code_prefix)
+    ).all()
+    
+    result = {
+        "product": {
+            "c_ClaveProdServ": product.c_ClaveProdServ,
+            "Descripcion": product.Descripcion,
+            "Palabras_similares": product.Palabras_similares
+        },
+        "classifications": [
+            {
+                "tipo_num": cls.tipo_num,
+                "Tipo": cls.Tipo,
+                "Div_num": cls.Div_num,
+                "Division": cls.Division,
+                "Grupo_num": cls.Grupo_num,
+                "Grupo": cls.Grupo,
+                "Clase_num": cls.Clase_num,
+                "Clase": cls.Clase
+            } for cls in classifications
+        ]
+    }
+    
+    return result
 
 
 if __name__ == "__main__":
