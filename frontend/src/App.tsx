@@ -22,6 +22,23 @@ function App() {
   const [cargando, setCargando] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Check if screen is mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 960);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Add event listener for resize
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const buscarProductos = async () => {
     if (!busqueda.trim()) return;
@@ -44,6 +61,86 @@ function App() {
     if (e.key === 'Enter') {
       buscarProductos();
     }
+  };
+
+  const handleProductClick = (producto: Producto) => {
+    // Toggle product selection
+    if (productoSeleccionado?.c_ClaveProdServ === producto.c_ClaveProdServ) {
+      setProductoSeleccionado(null);
+    } else {
+      setProductoSeleccionado(producto);
+      
+      // Scroll to the selected product on mobile
+      if (isMobile) {
+        setTimeout(() => {
+          const selectedElement = document.getElementById(`producto-${producto.c_ClaveProdServ}`);
+          if (selectedElement) {
+            selectedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+    }
+  };
+
+  const renderProductoDetalle = () => {
+    if (!productoSeleccionado) return null;
+    
+    return (
+      <div id="detalle-producto" className="detalle-container">
+        <h2>Detalle del Producto</h2>
+        
+        <div className="producto-header">
+          <div className="producto-titulo">
+            <h3>{productoSeleccionado.Descripcion}</h3>
+            <div className="producto-clave-detalle">Clave: {productoSeleccionado.c_ClaveProdServ}</div>
+          </div>
+        </div>
+        
+        <div className="taxonomy-container">
+          <div className="taxonomy-title">Clasificación Jerárquica</div>
+          
+          <div className="taxonomy-tree">
+            <div className="taxonomy-level">
+              <div className="level-label">Tipo ({productoSeleccionado.tipo_num}):</div>
+              <div className="level-value">{productoSeleccionado.Tipo}</div>
+            </div>
+            
+            <div className="taxonomy-arrow">↓</div>
+            
+            <div className="taxonomy-level">
+              <div className="level-label">División ({productoSeleccionado.Div_num}):</div>
+              <div className="level-value">{productoSeleccionado.Division}</div>
+            </div>
+            
+            <div className="taxonomy-arrow">↓</div>
+            
+            <div className="taxonomy-level">
+              <div className="level-label">Grupo ({productoSeleccionado.Grupo_num}):</div>
+              <div className="level-value">{productoSeleccionado.Grupo}</div>
+            </div>
+            
+            <div className="taxonomy-arrow">↓</div>
+            
+            <div className="taxonomy-level">
+              <div className="level-label">Clase ({productoSeleccionado.Clase_num}):</div>
+              <div className="level-value">{productoSeleccionado.Clase}</div>
+            </div>
+            
+            <div className="taxonomy-arrow">↓</div>
+            
+            <div className="taxonomy-level final-level">
+              <div className="level-label">Producto:</div>
+              <div className="level-value">{productoSeleccionado.Descripcion}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="palabras-similares">
+          <h4>Palabras Similares:</h4>
+          <p>{productoSeleccionado.Palabras_similares}</p>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -84,13 +181,23 @@ function App() {
           ) : resultados.length > 0 ? (
             <ul className="resultados-lista">
               {resultados.map((producto) => (
-                <li 
-                  key={producto.c_ClaveProdServ} 
-                  className={`resultado-item ${productoSeleccionado?.c_ClaveProdServ === producto.c_ClaveProdServ ? 'selected' : ''}`}
-                  onClick={() => setProductoSeleccionado(producto)}
-                >
-                  <div className="producto-clave">{producto.c_ClaveProdServ}</div>
-                  <div className="producto-descripcion">{producto.Descripcion}</div>
+                <li key={producto.c_ClaveProdServ}>
+                  <div 
+                    id={`producto-${producto.c_ClaveProdServ}`}
+                    className={`resultado-item ${productoSeleccionado?.c_ClaveProdServ === producto.c_ClaveProdServ ? 'selected' : ''}`}
+                    onClick={() => handleProductClick(producto)}
+                  >
+                    <div className="producto-clave">{producto.c_ClaveProdServ}</div>
+                    <div className="producto-descripcion">{producto.Descripcion}</div>
+                  </div>
+                  
+                  {/* Show product details inline on mobile */}
+                  {isMobile && 
+                    productoSeleccionado?.c_ClaveProdServ === producto.c_ClaveProdServ && 
+                    <div className="inline-details">
+                      {renderProductoDetalle()}
+                    </div>
+                  }
                 </li>
               ))}
             </ul>
@@ -104,62 +211,8 @@ function App() {
           )}
         </div>
 
-        {productoSeleccionado && (
-          <div className="detalle-container">
-            <h2>Detalle del Producto</h2>
-            
-            <div className="producto-header">
-              <div className="producto-titulo">
-                <h3>{productoSeleccionado.Descripcion}</h3>
-                <div className="producto-clave-detalle">Clave: {productoSeleccionado.c_ClaveProdServ}</div>
-              </div>
-            </div>
-            
-            <div className="taxonomy-container">
-              <div className="taxonomy-title">Clasificación Jerárquica</div>
-              
-              <div className="taxonomy-tree">
-                <div className="taxonomy-level">
-                  <div className="level-label">Tipo ({productoSeleccionado.tipo_num}):</div>
-                  <div className="level-value">{productoSeleccionado.Tipo}</div>
-                </div>
-                
-                <div className="taxonomy-arrow">↓</div>
-                
-                <div className="taxonomy-level">
-                  <div className="level-label">División ({productoSeleccionado.Div_num}):</div>
-                  <div className="level-value">{productoSeleccionado.Division}</div>
-                </div>
-                
-                <div className="taxonomy-arrow">↓</div>
-                
-                <div className="taxonomy-level">
-                  <div className="level-label">Grupo ({productoSeleccionado.Grupo_num}):</div>
-                  <div className="level-value">{productoSeleccionado.Grupo}</div>
-                </div>
-                
-                <div className="taxonomy-arrow">↓</div>
-                
-                <div className="taxonomy-level">
-                  <div className="level-label">Clase ({productoSeleccionado.Clase_num}):</div>
-                  <div className="level-value">{productoSeleccionado.Clase}</div>
-                </div>
-                
-                <div className="taxonomy-arrow">↓</div>
-                
-                <div className="taxonomy-level final-level">
-                  <div className="level-label">Producto:</div>
-                  <div className="level-value">{productoSeleccionado.Descripcion}</div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="palabras-similares">
-              <h4>Palabras Similares:</h4>
-              <p>{productoSeleccionado.Palabras_similares}</p>
-            </div>
-          </div>
-        )}
+        {/* Show product details in separate container on desktop */}
+        {!isMobile && productoSeleccionado && renderProductoDetalle()}
       </div>
       
       <footer className="app-footer">

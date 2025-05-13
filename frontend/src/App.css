@@ -350,6 +350,56 @@ body {
   opacity: 0.9;
 }
 
+/* Inline details for mobile */
+.inline-details {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 0.5rem;
+  border-left: 4px solid var(--primary-blue);
+}
+
+.inline-details .detalle-container {
+  margin: 0;
+  padding: 0.75rem;
+  box-shadow: none;
+  max-height: none;
+  border-radius: 8px;
+}
+
+.inline-details .taxonomy-container {
+  margin-bottom: 1rem;
+}
+
+.inline-details .taxonomy-level {
+  margin-bottom: 0.25rem;
+}
+
+.inline-details .taxonomy-arrow {
+  margin: 0.25rem 0;
+  font-size: 1.25rem;
+}
+
+.inline-details .palabras-similares {
+  padding: 0.75rem;
+}
+
+.inline-details h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.inline-details h3 {
+  font-size: 1.1rem;
+}
+
+.inline-details h4 {
+  font-size: 1rem;
+}
+
+.inline-details .producto-header {
+  margin-bottom: 1rem;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 960px) {
   .content-container {
@@ -372,5 +422,71 @@ body {
 
   .search-button {
     padding: 0.75rem;
+  }
+  
+  /* Mobile taxonomy adjustments */
+  .taxonomy-container {
+    padding: 1rem;
+    overflow-x: hidden;
+  }
+  
+  .taxonomy-tree {
+    width: 100%;
+  }
+  
+  .taxonomy-level {
+    width: calc(100% - 1rem);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+  }
+  
+  .level-value {
+    font-size: 1rem;
+  }
+  
+  .taxonomy-arrow {
+    margin: 0.25rem 0;
+  }
+  
+  .producto-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .producto-titulo h3 {
+    font-size: 1.3rem;
+    word-break: break-word;
+  }
+  
+  .palabras-similares {
+    padding: 1rem;
+  }
+  
+  .palabras-similares p {
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 400px) {
+  .content-container {
+    padding: 0 1rem 1rem;
+  }
+  
+  .taxonomy-container {
+    padding: 0.75rem;
+  }
+  
+  .taxonomy-level {
+    width: calc(100% - 0.5rem);
+    padding: 0.5rem;
+  }
+  
+  .level-label {
+    font-size: 0.8rem;
+  }
+  
+  .level-value {
+    font-size: 0.9rem;
   }
 }
