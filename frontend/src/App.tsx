@@ -36,7 +36,7 @@ function App() {
   // Determine the API base URL based on the current hostname
   const isProduction = window.location.hostname !== 'localhost';
   const apiBaseUrl = isProduction 
-    ? 'https://app.fistec.com' 
+    ? 'https://api.tecfis.com'
     : 'http://localhost:8080';
 
   useEffect(() => {
