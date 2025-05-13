@@ -5,6 +5,8 @@ from sqlalchemy import or_
 from sqlalchemy import func
 
 from sqlalchemy.orm import Session
+from sqlalchemy import cast, Integer
+
 from datetime import datetime
 import json
 import os
@@ -55,7 +57,7 @@ async def health():
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "healthy"})
 
 
-@app.get("/pull_json")
+@app.get("/pull_taxonomy")
 async def pull_json_endpoint():
     current_time = datetime.now().isoformat()
     logger.info("Pull JSON endpoint accessed")
@@ -70,7 +72,7 @@ async def pull_json_endpoint():
     return {"message": "JSON pulled triggered", "timestamp": current_time}
 
 
-@app.get("/pull_json_forced")
+@app.get("/pull_taxonomy_forced")
 async def pull_json_forced_endpoint():
     current_time = datetime.now().isoformat()
     logger.info("Pull JSON endpoint by forced, accessed")
@@ -152,7 +154,7 @@ async def load_db(db: Session = Depends(get_db)):
     return {"classification_count": classification_count, "clave_prod_serv_count": clave_prod_serv_count}
 
 
-@app.get("/search")
+@app.get("/search_claves")
 async def search_products(q: str, db: Session = Depends(get_db)):
     search_term = f"%{q.lower()}%"
     results = db.query(ClaveProdServ).filter(
@@ -161,7 +163,6 @@ async def search_products(q: str, db: Session = Depends(get_db)):
             func.lower(ClaveProdServ.Palabras_similares).like(search_term)
         )
     ).all()
-    # import ipdb; ipdb.set_trace()
     return [
         {
             "c_ClaveProdServ": item.c_ClaveProdServ,
@@ -173,48 +174,57 @@ async def search_products(q: str, db: Session = Depends(get_db)):
 
 @app.get("/hierarchy/{code}")
 async def get_product_hierarchy(code: str, db: Session = Depends(get_db)):
-    """
-    Get the hierarchical classification for a product code.
-    Returns all classifications where Clase_num starts with the given code prefix.
-    """
     logger.info(f"Getting hierarchy for code: {code}")
-    
-    # Get the product details
-    product = db.query(ClaveProdServ).filter(ClaveProdServ.c_ClaveProdServ == code).first()
-    
-    if not product:
-        return JSONResponse(status_code=404, content={"error": "Product code not found"})
-    
-    # Get the classification hierarchy
-    # For codes like 10101506, we want to find all classifications where Clase_num starts with that prefix
-    # We'll use the first digits of the code to match against Clase_num
-    code_prefix = code[:6]  # First 6 digits for matching the classification
-    
-    classifications = db.query(Classification).filter(
-        str(Classification.Clase_num).startswith(code_prefix)
-    ).all()
-    
-    result = {
-        "product": {
-            "c_ClaveProdServ": product.c_ClaveProdServ,
-            "Descripcion": product.Descripcion,
-            "Palabras_similares": product.Palabras_similares
-        },
-        "classifications": [
-            {
-                "tipo_num": cls.tipo_num,
-                "Tipo": cls.Tipo,
-                "Div_num": cls.Div_num,
-                "Division": cls.Division,
-                "Grupo_num": cls.Grupo_num,
-                "Grupo": cls.Grupo,
-                "Clase_num": cls.Clase_num,
-                "Clase": cls.Clase
-            } for cls in classifications
-        ]
+
+    code_prefix = int(code[:6])
+    classification = db.query(Classification).filter(Classification.Clase_num == code_prefix).first()
+
+    if not classification:
+        return JSONResponse(status_code=404, content={"error": "Classification not found"})
+
+    return {
+        "classification": {
+            "tipo_num": classification.tipo_num,
+            "Tipo": classification.Tipo,
+            "Div_num": classification.Div_num,
+            "Division": classification.Division,
+            "Grupo_num": classification.Grupo_num,
+            "Grupo": classification.Grupo,
+            "Clase_num": classification.Clase_num,
+            "Clase": classification.Clase
+        }
     }
-    
-    return result
+
+
+@app.get("/search_clave_prod_and_taxonomy")
+async def search_clave_prod_and_taxonomy(q: str, db: Session = Depends(get_db)):
+    search_term = f"%{q.lower()}%"
+    results = db.query(ClaveProdServ, Classification).join(
+        Classification,
+        cast(ClaveProdServ.c_ClaveProdServ / 100, Integer) == Classification.Clase_num
+    ).filter(
+        or_(
+            ClaveProdServ.Descripcion.ilike(search_term),
+            ClaveProdServ.Palabras_similares.ilike(search_term)
+        )
+    ).all()
+
+    return [
+        {
+            "c_ClaveProdServ": prod.c_ClaveProdServ,
+            "Descripcion": prod.Descripcion,
+            "Palabras_similares": prod.Palabras_similares,
+            "tipo_num": cls.tipo_num,
+            "Tipo": cls.Tipo,
+            "Div_num": cls.Div_num,
+            "Division": cls.Division,
+            "Grupo_num": cls.Grupo_num,
+            "Grupo": cls.Grupo,
+            "Clase_num": cls.Clase_num,
+            "Clase": cls.Clase
+        } for prod, cls in results
+    ]
+
 
 
 if __name__ == "__main__":
