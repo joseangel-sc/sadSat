@@ -5,6 +5,7 @@ import requests
 from datetime import datetime
 from session import with_db
 from db import ClaveProdServ
+import unicodedata
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +25,20 @@ def download_cfdi_catalog(date_str):
                 f.write(response.content)
         except Exception as e:
             logger.error(f"Failed to download Excel file: {e}")
-            return {"error": e}
+            return {"success": False, "reason": e}
 
-    return {"success": True, "path": xls_path}
+    return {"success": True, "reason": "file already exists"}
+
+
+def remove_accents(text):
+    if not isinstance(text, str):
+        return ''
+    new_text = unicodedata.normalize('NFD', text).encode('ascii', 'ignore').decode('utf-8')
+    new_text = new_text.replace('ñ', '')
+    if text != new_text:
+        return new_text
+
+    return ''
 
 
 def transform_to_parquet(date_str):
@@ -55,6 +67,12 @@ def transform_to_parquet(date_str):
     df['FechaFinVigencia'] = df['FechaFinVigencia'].apply(lambda x: x if pd.notna(x) else None)
 
     df['c_ClaveProdServ'] = pd.to_numeric(df['c_ClaveProdServ'], errors='coerce')
+    df['Combined'] = (
+            df['Descripcion'].fillna('').astype(str) + ' ' +
+            df['Palabras_similares'].fillna('').astype(str) + ' ' +
+            df['Descripcion'].fillna('').apply(remove_accents).astype(str) + ' ' +
+            df['Palabras_similares'].fillna('').apply(remove_accents).astype(str)
+    )
 
     df.to_parquet(parquet_path, index=False)
 

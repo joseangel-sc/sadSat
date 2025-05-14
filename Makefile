@@ -3,20 +3,6 @@
 # Default target
 all: help
 
-# Build and run the backend Docker container
-build:
-	@echo "Building and running backend container..."
-	docker build --progress=plain --platform linux/arm64 -t tecfis-local backend
-	docker stop pyconodig-backend-container 2>/dev/null || true
-	docker rm pyconodig-backend-container 2>/dev/null || true
-	docker run --name pyconodig-backend-container \
-		-p 8080:8080 \
-		-v $(PWD)/backend:/app \
-		-v pyconodig-data:/app/data \
-		-d pyconodig-backend
-	@echo "Backend running at http://localhost:8080"
-
-
 # Install dependencies and run the frontend dev server
 front:
 	@echo "Setting up and running frontend..."
@@ -79,43 +65,49 @@ help:
 	@echo "  make debug        - Run backend in interactive mode for ipdb debugging"
 	@echo "  make help         - Display this help message"
 
-
-logs:
-	@echo "Showing backend container logs..."
-	docker logs -f pyconodig-backend-container
-
-# Open a terminal in the running backend container
-terminal:
-	@echo "Opening terminal in backend container..."
-	docker exec -it pyconodig-backend-container /bin/bash
-
-# Restart the backend container with a fresh build
-restart_back:
-	docker rm -f pyconodig-backend-container 2>/dev/null || true
-	docker run --name pyconodig-backend-container \
-		-p 8080:8080 \
-		-v $(PWD)/backend:/app \
-		-v pyconodig-data:/app/data \
-		-d pyconodig-backend
-	@echo "Backend rebuilt and restarted at http://localhost:8080"
-
-# Run backend container in interactive mode for debugging with ipdb
-debug:
-	@echo "Running backend in debug mode with ipdb support..."
-	docker stop pyconodig-backend-container 2>/dev/null || true
-	docker rm pyconodig-backend-container 2>/dev/null || true
-	docker run --name pyconodig-backend-container \
-		-p 8080:8080 \
-		-v $(PWD)/backend:/app \
-		-v pyconodig-data:/app/data \
-		-it pyconodig-backend
-
 deploy:
 	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 409439538115.dkr.ecr.us-east-1.amazonaws.com
 	docker build --platform linux/amd64 -t tecfis backend
 	docker tag tecfis:latest 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest	
 	docker push 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest
 
+build:
+	@echo "Building and running backend container..."
+	docker build --platform linux/arm64 -t tecfis backend
+	docker stop tecfis 2>/dev/null || true
+	docker rm tecfis 2>/dev/null || true
+	docker run --name tecfis \
+		-p 8080:8080 \
+		-v $(PWD)/backend:/app \
+		-d tecfis
+	@echo "Backend running at http://localhost:8080"
+
+restart_back:
+	docker rm -f tecfis 2>/dev/null || true
+	docker run --name tecfis \
+		-p 8080:8080 \
+		-v $(PWD)/backend:/app \
+		-v pyconodig-data:/app/data \
+		-d tecfis
+
+debug:
+	@echo "Running backend in debug mode with ipdb support..."
+	docker stop tecfis 2>/dev/null || true
+	docker rm tecfis 2>/dev/null || true
+	docker run --name tecfis \
+		-p 8080:8080 \
+		-v $(PWD)/backend:/app \
+		-v pyconodig-data:/app/data \
+		-it tecfis
+
+logs:
+	@echo "Showing backend container logs..."
+	docker logs -f tecfis
+
+terminal:
+	@echo "Opening terminal in backend container..."
+	docker exec -it tecfis /bin/bash
+
 lint:
-	docker exec pyconodig-backend-container ruff check /app --fix --unsafe-fixes
-	docker exec pyconodig-backend-container black /app
+	docker exec tecfis ruff check /app --fix --unsafe-fixes
+	docker exec tecfis black /app

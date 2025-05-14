@@ -15,6 +15,7 @@ class ClaveProdServ(Base):
     FechaFinVigencia = Column(DateTime)
     Estimulo_Franja_Fronteriza = Column(String)
     Palabras_similares = Column(String)
+    Combined = Column(String)
 
 
 class Classification(Base):

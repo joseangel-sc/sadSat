@@ -14,7 +14,6 @@ from src._scraper import obtain_families
 from src._scraper import obtain_classes
 from src._exporter import export_to_json
 from src._exporter import export_to_xml
-from src.taxonomy import flatten_data
 
 
 logger = logging.getLogger(__name__)
@@ -77,14 +76,6 @@ def generate_pys_data(silent=False) -> List[Dict[str, Any]]:
         types_list.append(type_data)
 
     return types_list
-
-
-def pull_xml(output_file=None):
-    logger.info("Starting pull_xml operation")
-    data = generate_pys_data()
-    result = export_to_xml(data, output_file)
-    logger.info("pull_xml operation completed")
-    return result
 
 
 def is_pull_locked():

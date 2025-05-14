@@ -4,7 +4,7 @@ from session import with_db
 
 
 @with_db
-def flatten_data(input_file="output.json", *, db):
+def load_flatten_data(input_file="output.json", *, db):
     with open(input_file, "r", encoding="utf-8") as file:
         data = json.load(file)
 
