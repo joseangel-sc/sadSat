@@ -41,6 +41,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+async def startup_event():
+    with SessionLocal() as db:
+        db.query(Classification).delete()
+        load_flatten_data()
+        load_latest_catalog_to_db()
+
+
 
 @app.get("/")
 async def root():
