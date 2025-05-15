@@ -1,10 +1,11 @@
 from fastapi import FastAPI, status, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import or_
 from sqlalchemy import func
 
 from sqlalchemy.orm import Session
-from sqlalchemy import cast, Integer
+from sqlalchemy import cast, Integer, text
 
 from datetime import datetime
 import json
@@ -17,6 +18,7 @@ from src.generator import pull_json
 from src.generator import is_pull_locked
 from src.catalogo_pull import download_cfdi_catalog
 from db import Base, ClaveProdServ, Classification
+from sqlalchemy import Table, MetaData
 
 from session import get_db, engine, SessionLocal
 from src.taxonomy import load_flatten_data
@@ -30,7 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 Base.metadata.create_all(bind=engine)
-
+metadata = MetaData()
 app = FastAPI()
 
 app.add_middleware(
@@ -47,7 +49,6 @@ async def startup_event():
         db.query(Classification).delete()
         load_flatten_data()
         load_latest_catalog_to_db()
-
 
 
 @app.get("/")
@@ -76,6 +77,7 @@ async def pull_json_endpoint():
     pull_json_thread = threading.Thread(target=pull_json)
     pull_json_thread.start()
     return {"message": "JSON pulled triggered", "timestamp": current_time}
+
 
 @app.get("/favicon.ico")
 async def favicon():
@@ -124,16 +126,29 @@ async def load_db(db: Session = Depends(get_db)):
 
 @app.get("/search_clave_prod_and_taxonomy")
 async def search_clave_prod_and_taxonomy(q: str, db: Session = Depends(get_db)):
-    search_term = f"%{q.lower()}%"
+    search_term_full = q.lower()
+    words_in_search = q.lower().split()
+
+    try:
+        full_ids = db.execute(
+            text("SELECT c_ClaveProdServ FROM clave_prod_serv_fts WHERE clave_prod_serv_fts MATCH :match"),
+            {"match": f'"{search_term_full}"'}
+        ).fetchall()
+        full_ids = [x[0] for x in full_ids]
+    except Exception:
+        db.rollback()
+        full_ids = []
+
     results = db.query(ClaveProdServ, Classification).join(
         Classification,
         cast(ClaveProdServ.c_ClaveProdServ / 100, Integer) == Classification.Clase_num
     ).filter(
-        ClaveProdServ.Combined.ilike(search_term),
+        ClaveProdServ.c_ClaveProdServ.in_(full_ids)
     ).all()
 
-    return [
-        {
+    exact_result = []
+    for prod, cls in results:
+        exact_result.append({
             "c_ClaveProdServ": prod.c_ClaveProdServ,
             "Descripcion": prod.Descripcion,
             "Palabras_similares": prod.Palabras_similares,
@@ -145,8 +160,46 @@ async def search_clave_prod_and_taxonomy(q: str, db: Session = Depends(get_db)):
             "Grupo": cls.Grupo,
             "Clase_num": cls.Clase_num,
             "Clase": cls.Clase
-        } for prod, cls in results
-    ]
+        })
+
+    partial_ids = set()
+    try:
+        for word in words_in_search:
+            ids = db.execute(
+                text("SELECT c_ClaveProdServ FROM clave_prod_serv_fts WHERE clave_prod_serv_fts MATCH :match"),
+                {"match": word}
+            ).fetchall()
+            partial_ids.update([x[0] for x in ids])
+    except Exception:
+        db.rollback()
+        partial_ids = set()
+
+    partial_ids.difference_update({r["c_ClaveProdServ"] for r in exact_result})
+
+    results = db.query(ClaveProdServ, Classification).join(
+        Classification,
+        cast(ClaveProdServ.c_ClaveProdServ / 100, Integer) == Classification.Clase_num
+    ).filter(
+        ClaveProdServ.c_ClaveProdServ.in_(partial_ids)
+    ).all()
+
+    or_results = []
+    for prod, cls in results:
+        or_results.append({
+            "c_ClaveProdServ": prod.c_ClaveProdServ,
+            "Descripcion": prod.Descripcion,
+            "Palabras_similares": prod.Palabras_similares,
+            "tipo_num": cls.tipo_num,
+            "Tipo": cls.Tipo,
+            "Div_num": cls.Div_num,
+            "Division": cls.Division,
+            "Grupo_num": cls.Grupo_num,
+            "Grupo": cls.Grupo,
+            "Clase_num": cls.Clase_num,
+            "Clase": cls.Clase
+        })
+
+    return exact_result + or_results
 
 
 if __name__ == "__main__":

@@ -7,7 +7,20 @@ from session import with_db
 from db import ClaveProdServ
 import unicodedata
 
+from sqlalchemy import text
+
+
 logger = logging.getLogger(__name__)
+
+
+@with_db
+def create_fts_table(*, db):
+    db.execute(text("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS clave_prod_serv_fts 
+        USING fts5(Combined, c_ClaveProdServ UNINDEXED, content='clave_prod_serv', content_rowid='c_ClaveProdServ');
+    """))
+    db.commit()
+
 
 
 def download_cfdi_catalog(date_str):
@@ -85,6 +98,7 @@ def transform_to_parquet(date_str):
 
 @with_db
 def load_latest_catalog_to_db(*, db):
+    create_fts_table()
     files = [f for f in os.listdir("/app") if f.startswith("catalogo_") and f.endswith(".parquet")]
     if not files:
         raise FileNotFoundError("No catalog files found")
@@ -98,7 +112,13 @@ def load_latest_catalog_to_db(*, db):
     records = df.to_dict(orient="records")
 
     db.query(ClaveProdServ).delete()
+    db.execute(text("DELETE FROM clave_prod_serv_fts"))
     db.bulk_insert_mappings(ClaveProdServ, records)
-    db.commit()
 
+    fts_records = [{"Combined": r["Combined"], "c_ClaveProdServ": r["c_ClaveProdServ"]} for r in records if r.get("Combined")]
+
+    for record in fts_records:
+        db.execute(text("INSERT INTO clave_prod_serv_fts (Combined, c_ClaveProdServ) VALUES (:Combined, :c_ClaveProdServ)"), record)
+    db.execute(text("INSERT INTO clave_prod_serv_fts(clave_prod_serv_fts) VALUES('rebuild')"))
+    db.commit()
     return {"success": True, "date": latest_date}

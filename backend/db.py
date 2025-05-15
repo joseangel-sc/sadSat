@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime
+from sqlalchemy import Column, String, Table, Integer, DateTime, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -28,6 +28,3 @@ class Classification(Base):
     Grupo = Column(String)
     Clase_num = Column(Integer, primary_key=True)
     Clase = Column(String)
-
-
-
