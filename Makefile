@@ -71,7 +71,7 @@ deploy:
 	docker tag tecfis:latest 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest	
 	docker push 409439538115.dkr.ecr.us-east-1.amazonaws.com/tecfis:latest
 
-build:
+back:
 	@echo "Building and running backend container..."
 	docker build --platform linux/arm64 -t tecfis backend
 	docker stop tecfis 2>/dev/null || true
