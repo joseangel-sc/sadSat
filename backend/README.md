@@ -97,22 +97,6 @@ The backend implements two approaches for pulling SAT catalog data:
 - `GET /pull_taxonomy` - Trigger taxonomy data pull
 - `GET /load_db` - Load data into database
 
-## Data Structure
-
-### PYS Catalog Hierarchy
-
-```
-Types (3 total)
-├── Productos (Products)
-│   ├── Segments (59 total)
-│   │   ├── Families (478 total)
-│   │   │   └── Classes (4,223 total)
-└── Servicios (Services)
-    ├── Segments
-    │   ├── Families
-    │   │   └── Classes
-```
-
 ### File Management
 
 - **Latest Files Only:** The system maintains only the most recently pulled catalog files
