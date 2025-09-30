@@ -16,12 +16,13 @@ import logging
 
 from src.generator import pull_json
 from src.generator import is_pull_locked
+from src.taxonomy import load_flatten_data
 from src.catalogo_pull import download_cfdi_catalog
+from src.pys_scraper import scrape_and_save_pys_catalog
 from db import Base, ClaveProdServ, Classification
 from sqlalchemy import Table, MetaData
 
-from session import get_db, engine, SessionLocal
-from src.taxonomy import load_flatten_data
+from session import get_db, engine, SessionLocal    
 from src.catalogo_pull import load_latest_catalog_to_db
 
 logging.basicConfig(
@@ -48,7 +49,10 @@ async def startup_event():
     with SessionLocal() as db:
         db.query(Classification).delete()
         load_flatten_data()
-        load_latest_catalog_to_db()
+        try:
+            load_latest_catalog_to_db()
+        except FileNotFoundError:
+            logger.warning("No catalog files found during startup. Use /pull_pys_catalog to scrape new data.")
 
 
 @app.get("/")
@@ -64,19 +68,10 @@ async def health():
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "healthy"})
 
 
-@app.get("/pull_taxonomy")
-async def pull_json_endpoint():
-    current_time = datetime.now().isoformat()
-    logger.info("Pull JSON endpoint accessed")
-    is_locked = is_pull_locked()
-    if is_locked["locked"]:
-        return {
-            "Message": "Can't trigger a new pull rightnow",
-            "reason": is_locked["reason"],
-        }
-    pull_json_thread = threading.Thread(target=pull_json)
-    pull_json_thread.start()
-    return {"message": "JSON pulled triggered", "timestamp": current_time}
+@app.get("/pull_taxonomy") # IDK what to do with this endpoint. It used to pull from output.json
+async def pull_taxonomy():
+    load_flatten_data()
+    return JSONResponse(status_code=200, content={"message": "Taxonomy data pulled successfully"})
 
 
 @app.get("/favicon.ico")
@@ -86,15 +81,48 @@ async def favicon():
 
 @app.get("/show_latest")
 async def show_latest():
-    file_path = "/app/output.json"
+    """Show latest PYS catalog data and metadata"""
+    raw_file_path = "/app/pys_catalog_latest.json"
+    flattened_file_path = "/app/pys_flattened_latest.json"
+    
     try:
-        if not os.path.exists(file_path):
-            return JSONResponse(status_code=404, content={"error": "File not found"})
-        async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
+        # Check if PYS catalog files exist
+        if not os.path.exists(raw_file_path):
+            return JSONResponse(
+                status_code=404, 
+                content={"error": "No PYS catalog found. Use /pull_pys_catalog to scrape data first."}
+            )
+        
+        # Read the raw catalog file
+        async with aiofiles.open(raw_file_path, "r", encoding="utf-8") as f:
             content = await f.read()
         data = json.loads(content)
-        created = datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat()
-        return {"date_pulled": created, "data": data}
+        
+        # Get file modification time
+        created = datetime.fromtimestamp(os.path.getmtime(raw_file_path)).isoformat()
+        
+        # Extract metadata
+        metadata = data.get("metadata", {})
+        
+        # Check if flattened file exists
+        flattened_exists = os.path.exists(flattened_file_path)
+        
+        return {
+            "date_pulled": created,
+            "source": "PYS Catalog Scraper",
+            "metadata": metadata,
+            "files": {
+                "raw_file": raw_file_path,
+                "flattened_file": flattened_file_path,
+                "flattened_exists": flattened_exists
+            },
+            "data_summary": {
+                "total_types": metadata.get("total_types", 0),
+                "total_segments": metadata.get("total_segments", 0),
+                "total_families": metadata.get("total_families", 0),
+                "total_classes": metadata.get("total_classes", 0)
+            }
+        }
     except json.JSONDecodeError as e:
         return JSONResponse(
             status_code=400, content={"error": f"Invalid JSON: {str(e)}"}
@@ -112,6 +140,68 @@ async def pull_catalogo(date_str: str):
         return JSONResponse(status_code=404, content={"error": "Date not found on SAT"})
 
     return JSONResponse(status_code=500, content={"error": "server error"})
+
+
+@app.post("/pull_pys_catalog")
+async def pull_pys_catalog():
+    """Pull PYS catalog using the new scraping approach"""
+    try:
+        logger.info("Starting PYS catalog scraping")
+        result = scrape_and_save_pys_catalog()
+        logger.info(f"PYS catalog scraping completed: {result['metadata']}")
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "message": "PYS catalog scraped successfully",
+                "raw_file": result["raw_file"],
+                "flattened_file": result["flattened_file"],
+                "metadata": result["metadata"]
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error scraping PYS catalog: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/test_pys_scraper")
+async def test_pys_scraper():
+    """Test the PYS scraper with basic functionality"""
+    try:
+        from src._scraper import obtain_types
+        logger.info("Testing PYS scraper basic functionality")
+        types = obtain_types()
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "PYS scraper test successful",
+                "types_count": len(types),
+                "sample_types": dict(list(types.items())[:3])
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error testing PYS scraper: {e}")
+        return JSONResponse(
+            status_code=500, 
+            content={
+                "error": str(e),
+                "message": "PYS scraper test failed. The SAT website might be temporarily unavailable."
+            }
+        )
+
+
+@app.get("/cleanup_pys_files")
+async def cleanup_pys_files():
+    """Clean up old PYS catalog files, keeping only the latest ones"""
+    try:
+        from src.pys_scraper import cleanup_old_files
+        cleanup_old_files()
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Old PYS files cleaned up successfully"}
+        )
+    except Exception as e:
+        logger.error(f"Error cleaning up PYS files: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 @app.get("/load_db")

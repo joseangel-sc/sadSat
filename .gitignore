@@ -162,3 +162,7 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 
+# Pulled files
+output.json
+pys_catalog_latest.json
+pys_flattened_latest.json
